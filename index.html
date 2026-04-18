@@ -1,1 +1,59 @@
-index.html
+<!DOCTYPE html>
+
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sanza Empréstimos</title>
+  <style>
+    body { font-family: Arial; background:#f4f4f4; text-align:center; }
+    input { padding:10px; margin:5px; width:80%; }
+    button { padding:10px 20px; background:green; color:white; border:none; }
+    .card { background:white; padding:10px; margin:10px; border-radius:10px; }
+  </style>
+</head>
+<body>
+
+<h1>💰 Sanza Empréstimos</h1>
+
+<div id="login">
+  <input type="password" id="senha" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="app" style="display:none;">
+  <h2>Registrar Empréstimo</h2>
+
+<input id="nome" placeholder="Nome do cliente"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br>
+
+<button onclick="adicionar()">Adicionar</button>
+
+  <h3>Clientes:</h3>
+  <div id="lista"></div>
+</div>
+
+<script>
+function login(){
+  if(document.getElementById('senha').value == '1989'){
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } else {
+    alert('Senha incorreta');
+  }
+}
+
+function adicionar(){
+  let nome = document.getElementById('nome').value;
+  let valor = document.getElementById('valor').value;
+
+  let div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `<b>${nome}</b><br>Valor: ${valor} Kz`;
+
+  document.getElementById('lista').appendChild(div);
+}
+</script>
+
+</body>
+</html>
+
