@@ -8,7 +8,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
@@ -58,43 +58,59 @@ window.salvar = async function(){
   carregar();
 }
 
+window.apagar = async function(id){
+  if(confirm("Tem certeza que deseja apagar?")){
+    await deleteDoc(doc(db, "clientes", id));
+    carregar();
+  }
+}
+
 async function carregar(){
   const lista = document.getElementById('lista');
   lista.innerHTML = "";
 
   const querySnapshot = await getDocs(collection(db, "clientes"));
 
-  querySnapshot.forEach((doc)=>{
-    let d = doc.data();
+  querySnapshot.forEach((docSnap)=>{
+    let d = docSnap.data();
+    let id = docSnap.id;
 
     let hoje = new Date();
     let venc = d.vencimento.toDate();
     let atrasoDias = Math.max(0, Math.floor((hoje - venc)/(1000*60*60*24)));
+
     let multa = atrasoDias * (d.total * 0.0116);
-
     let totalFinal = d.total + multa;
-
-    let msg = `Olá ${d.nome}, seu pagamento de ${totalFinal.toFixed(2)} Kz está vencido ou próximo.`;
 
     let div = document.createElement('div');
     div.style.background="white";
     div.style.margin="10px";
-    div.style.padding="10px";
+    div.style.padding="15px";
     div.style.borderRadius="10px";
+    div.style.boxShadow="0 0 5px rgba(0,0,0,0.2)";
 
     div.innerHTML = `
       <b>${d.nome}</b><br>
-      Valor: ${d.valor} Kz<br>
-      Total: ${d.total.toFixed(2)} Kz<br>
-      Multa: ${multa.toFixed(2)} Kz<br>
-      Final: ${totalFinal.toFixed(2)} Kz<br>
-      Vencimento: ${venc.toLocaleDateString()}<br>
-      Item: ${d.item}<br>
-      Credor: ${d.credor}<br><br>
+      📞 ${d.contacto}<br><br>
 
-      <a href="https://wa.me/${d.contacto}?text=${encodeURIComponent(msg)}" target="_blank">
-        📩 Cobrar no WhatsApp
+      💰 Valor emprestado: ${d.valor} Kz<br>
+      📊 Juros (35%): ${d.juros.toFixed(2)} Kz<br>
+      💵 Total inicial: ${d.total.toFixed(2)} Kz<br>
+
+      ⏱️ Dias: ${d.dias}<br>
+      📅 Vencimento: ${venc.toLocaleDateString()}<br>
+
+      ⚠️ Multa atraso: ${multa.toFixed(2)} Kz<br>
+      💸 Total final: ${totalFinal.toFixed(2)} Kz<br><br>
+
+      📦 Item: ${d.item}<br>
+      👤 Credor: ${d.credor}<br><br>
+
+      <a href="https://wa.me/${d.contacto}?text=${encodeURIComponent("Olá " + d.nome + ", o seu pagamento é de " + totalFinal.toFixed(2) + " Kz.")}" target="_blank">
+        📩 Cobrar
       </a>
+      <br><br>
+      <button onclick="apagar('${id}')" style="background:red;">Apagar</button>
     `;
 
     lista.appendChild(div);
@@ -105,7 +121,7 @@ async function carregar(){
 <style>
 body { font-family: Arial; background:#f4f4f4; text-align:center; }
 input { padding:10px; margin:5px; width:80%; }
-button { padding:10px; background:green; color:white; border:none; }
+button { padding:10px; background:green; color:white; border:none; cursor:pointer; }
 </style>
 
 </head>
@@ -122,7 +138,7 @@ button { padding:10px; background:green; color:white; border:none; }
 <div id="app" style="display:none;">
 <h2>Novo Empréstimo</h2>
 
-<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto (ex: 244...)"><br> <input id="valor" type="number" placeholder="Valor"><br> <input id="dias" type="number" placeholder="Dias para pagar"><br> <input id="item" placeholder="Item penhorado"><br> <input id="credor" placeholder="Credor"><br>
+<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br> <input id="dias" type="number" placeholder="Dias"><br> <input id="item" placeholder="Item penhorado"><br> <input id="credor" placeholder="Credor"><br>
 
 <button onclick="salvar()">Salvar</button>
 
@@ -132,3 +148,4 @@ button { padding:10px; background:green; color:white; border:none; }
 
 </body>
 </html>
+
