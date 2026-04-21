@@ -6,9 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sanza Empréstimos</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
@@ -22,106 +24,119 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let listaGlobal = [];
+
 window.login = function(){
   if(document.getElementById('senha').value === '1989'){
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     carregar();
-  } else {
-    alert("Senha errada");
   }
 }
 
 window.salvar = async function(){
-  let nome = document.getElementById('nome').value;
-  let contacto = document.getElementById('contacto').value;
-  let valor = Number(document.getElementById('valor').value);
-  let dias = Number(document.getElementById('dias').value);
-  let item = document.getElementById('item').value;
-  let credor = document.getElementById('credor').value;
+  let nome = nomeI.value;
+  let contacto = contactoI.value;
+  let valor = Number(valorI.value);
+  let dias = Number(diasI.value);
+  let item = itemI.value;
+  let credor = credorI.value;
 
   let juros = valor * 0.35;
   let total = valor + juros;
 
-  let hoje = new Date();
   let vencimento = new Date();
-  vencimento.setDate(hoje.getDate() + dias);
+  vencimento.setDate(vencimento.getDate() + dias);
 
   await addDoc(collection(db, "clientes"), {
-    nome, contacto, valor, juros, total,
-    dias, item, credor,
-    data: hoje,
-    vencimento: vencimento
+    nome, contacto, valor, juros, total, dias, item, credor, vencimento
   });
 
-  alert("Salvo com sucesso!");
   carregar();
 }
 
-window.apagar = async function(id){
-  if(confirm("Tem certeza que deseja apagar?")){
-    await deleteDoc(doc(db, "clientes", id));
+window.editar = function(id){
+  let d = listaGlobal.find(x=>x.id===id);
+  nomeI.value = d.nome;
+  contactoI.value = d.contacto;
+  valorI.value = d.valor;
+  diasI.value = d.dias;
+  itemI.value = d.item;
+  credorI.value = d.credor;
+
+  salvarBtn.onclick = async ()=>{
+    let juros = valorI.value * 0.35;
+    let total = Number(valorI.value) + juros;
+
+    await updateDoc(doc(db,"clientes",id),{
+      nome: nomeI.value,
+      contacto: contactoI.value,
+      valor: Number(valorI.value),
+      juros,
+      total
+    });
+
+    salvarBtn.onclick = salvar;
     carregar();
   }
 }
 
+window.apagar = async function(id){
+  await deleteDoc(doc(db,"clientes",id));
+  carregar();
+}
+
+window.pesquisar = function(){
+  let termo = busca.value.toLowerCase();
+  render(listaGlobal.filter(x=>x.nome.toLowerCase().includes(termo)));
+}
+
+window.gerarPDF = function(d){
+  const { jsPDF } = window.jspdf;
+  let docp = new jsPDF();
+
+  docp.text("Sanza Empréstimos", 20, 20);
+  docp.text("Cliente: "+d.nome, 20, 40);
+  docp.text("Valor: "+d.valor+" Kz", 20, 50);
+  docp.text("Total: "+d.total+" Kz", 20, 60);
+
+  docp.save("recibo.pdf");
+}
+
 async function carregar(){
-  const lista = document.getElementById('lista');
-  lista.innerHTML = "";
+  let snap = await getDocs(collection(db,"clientes"));
+  listaGlobal = snap.docs.map(d=>({id:d.id,...d.data()}));
+  render(listaGlobal);
+}
 
-  const querySnapshot = await getDocs(collection(db, "clientes"));
+function render(lista){
+  let totalEmp = 0, totalDiv = 0;
 
-  querySnapshot.forEach((docSnap)=>{
-    let d = docSnap.data();
-    let id = docSnap.id;
+  listaHTML.innerHTML = "";
 
-    let hoje = new Date();
-    let venc = d.vencimento.toDate();
-    let atrasoDias = Math.max(0, Math.floor((hoje - venc)/(1000*60*60*24)));
+  lista.forEach(d=>{
+    totalEmp += d.valor;
+    totalDiv += d.total;
 
-    let multa = atrasoDias * (d.total * 0.0116);
-    let totalFinal = d.total + multa;
-
-    let div = document.createElement('div');
-    div.style.background="white";
-    div.style.margin="10px";
-    div.style.padding="15px";
-    div.style.borderRadius="10px";
-    div.style.boxShadow="0 0 5px rgba(0,0,0,0.2)";
-
+    let div = document.createElement("div");
     div.innerHTML = `
-      <b>${d.nome}</b><br>
-      📞 ${d.contacto}<br><br>
-
-      💰 Valor emprestado: ${d.valor} Kz<br>
-      📊 Juros (35%): ${d.juros.toFixed(2)} Kz<br>
-      💵 Total inicial: ${d.total.toFixed(2)} Kz<br>
-
-      ⏱️ Dias: ${d.dias}<br>
-      📅 Vencimento: ${venc.toLocaleDateString()}<br>
-
-      ⚠️ Multa atraso: ${multa.toFixed(2)} Kz<br>
-      💸 Total final: ${totalFinal.toFixed(2)} Kz<br><br>
-
-      📦 Item: ${d.item}<br>
-      👤 Credor: ${d.credor}<br><br>
-
-      <a href="https://wa.me/${d.contacto}?text=${encodeURIComponent("Olá " + d.nome + ", o seu pagamento é de " + totalFinal.toFixed(2) + " Kz.")}" target="_blank">
-        📩 Cobrar
-      </a>
-      <br><br>
-      <button onclick="apagar('${id}')" style="background:red;">Apagar</button>
-    `;
-
-    lista.appendChild(div);
+    <b>${d.nome}</b> - ${d.total} Kz <br>
+    <button onclick="editar('${d.id}')">✏️</button>
+    <button onclick="apagar('${d.id}')">🗑️</button>
+    <button onclick='gerarPDF(${JSON.stringify(d)})'>🧾</button>
+    <hr>`;
+    listaHTML.appendChild(div);
   });
+
+  totalEmpHTML.innerText = totalEmp;
+  totalDivHTML.innerText = totalDiv;
 }
 </script>
 
 <style>
-body { font-family: Arial; background:#f4f4f4; text-align:center; }
-input { padding:10px; margin:5px; width:80%; }
-button { padding:10px; background:green; color:white; border:none; cursor:pointer; }
+body{font-family:Arial;background:#f4f4f4;text-align:center}
+input{padding:10px;margin:5px;width:80%}
+button{padding:8px;margin:3px}
 </style>
 
 </head>
@@ -131,19 +146,33 @@ button { padding:10px; background:green; color:white; border:none; cursor:pointe
 <h1>💰 Sanza Empréstimos</h1>
 
 <div id="login">
-<input type="password" id="senha" placeholder="Senha">
+<input id="senha" type="password">
 <button onclick="login()">Entrar</button>
 </div>
 
 <div id="app" style="display:none;">
-<h2>Novo Empréstimo</h2>
 
-<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br> <input id="dias" type="number" placeholder="Dias"><br> <input id="item" placeholder="Item penhorado"><br> <input id="credor" placeholder="Credor"><br>
+<h3>📊 Dashboard</h3>
+Emprestado: <span id="totalEmpHTML"></span> Kz |
+Dívida: <span id="totalDivHTML"></span> Kz
 
-<button onclick="salvar()">Salvar</button>
+<br><br>
 
-<h3>Clientes:</h3>
-<div id="lista"></div>
+<input id="busca" placeholder="Pesquisar" onkeyup="pesquisar()">
+
+<h3>Novo</h3>
+<input id="nomeI" placeholder="Nome"><br>
+<input id="contactoI" placeholder="Contacto"><br>
+<input id="valorI" placeholder="Valor"><br>
+<input id="diasI" placeholder="Dias"><br>
+<input id="itemI" placeholder="Item"><br>
+<input id="credorI" placeholder="Credor"><br>
+
+<button id="salvarBtn" onclick="salvar()">Salvar</button>
+
+<h3>Clientes</h3>
+<div id="listaHTML"></div>
+
 </div>
 
 </body>
