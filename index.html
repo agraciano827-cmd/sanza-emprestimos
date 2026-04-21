@@ -2,71 +2,111 @@
 
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sanza Empréstimos</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanza Empréstimos</title>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
-      authDomain: "sanza-emprestimos.firebaseapp.com",
-      projectId: "sanza-emprestimos",
-      storageBucket: "sanza-emprestimos.firebasestorage.app",
-      messagingSenderId: "789742780283",
-      appId: "1:789742780283:web:114b9c40497a561e2007de"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
+  authDomain: "sanza-emprestimos.firebaseapp.com",
+  projectId: "sanza-emprestimos",
+  storageBucket: "sanza-emprestimos.firebasestorage.app",
+  messagingSenderId: "789742780283",
+  appId: "1:789742780283:web:114b9c40497a561e2007de"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    window.login = function() {
-      if (document.getElementById('senha').value === '1989') {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        carregar();
-      } else {
-        alert('Senha incorreta');
-      }
-    }
+window.login = function(){
+  if(document.getElementById('senha').value === '1989'){
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    carregar();
+  } else {
+    alert("Senha errada");
+  }
+}
 
-    window.adicionar = async function() {
-      let nome = document.getElementById('nome').value;
-      let contacto = document.getElementById('contacto').value;
-      let valor = document.getElementById('valor').value;
+window.salvar = async function(){
+  let nome = document.getElementById('nome').value;
+  let contacto = document.getElementById('contacto').value;
+  let valor = Number(document.getElementById('valor').value);
+  let dias = Number(document.getElementById('dias').value);
+  let item = document.getElementById('item').value;
+  let credor = document.getElementById('credor').value;
 
-      await addDoc(collection(db, "clientes"), {
-        nome,
-        contacto,
-        valor,
-        data: new Date()
-      });
+  let juros = valor * 0.35;
+  let total = valor + juros;
 
-      alert("Salvo com sucesso!");
-      carregar();
-    }
+  let hoje = new Date();
+  let vencimento = new Date();
+  vencimento.setDate(hoje.getDate() + dias);
 
-    async function carregar() {
-      const lista = document.getElementById('lista');
-      lista.innerHTML = "";
+  await addDoc(collection(db, "clientes"), {
+    nome, contacto, valor, juros, total,
+    dias, item, credor,
+    data: hoje,
+    vencimento: vencimento
+  });
 
-      const querySnapshot = await getDocs(collection(db, "clientes"));
-      querySnapshot.forEach((doc) => {
-        let d = doc.data();
-        let div = document.createElement('div');
-        div.innerHTML = `<b>${d.nome}</b> - ${d.valor} Kz<br>${d.contacto}<hr>`;
-        lista.appendChild(div);
-      });
-    }
-  </script>
+  alert("Salvo com sucesso!");
+  carregar();
+}
 
-  <style>
-    body { font-family: Arial; background:#f4f4f4; text-align:center; }
-    input { padding:10px; margin:5px; width:80%; }
-    button { padding:10px; background:green; color:white; border:none; }
-  </style>
+async function carregar(){
+  const lista = document.getElementById('lista');
+  lista.innerHTML = "";
+
+  const querySnapshot = await getDocs(collection(db, "clientes"));
+
+  querySnapshot.forEach((doc)=>{
+    let d = doc.data();
+
+    let hoje = new Date();
+    let venc = d.vencimento.toDate();
+    let atrasoDias = Math.max(0, Math.floor((hoje - venc)/(1000*60*60*24)));
+    let multa = atrasoDias * (d.total * 0.0116);
+
+    let totalFinal = d.total + multa;
+
+    let msg = `Olá ${d.nome}, seu pagamento de ${totalFinal.toFixed(2)} Kz está vencido ou próximo.`;
+
+    let div = document.createElement('div');
+    div.style.background="white";
+    div.style.margin="10px";
+    div.style.padding="10px";
+    div.style.borderRadius="10px";
+
+    div.innerHTML = `
+      <b>${d.nome}</b><br>
+      Valor: ${d.valor} Kz<br>
+      Total: ${d.total.toFixed(2)} Kz<br>
+      Multa: ${multa.toFixed(2)} Kz<br>
+      Final: ${totalFinal.toFixed(2)} Kz<br>
+      Vencimento: ${venc.toLocaleDateString()}<br>
+      Item: ${d.item}<br>
+      Credor: ${d.credor}<br><br>
+
+      <a href="https://wa.me/${d.contacto}?text=${encodeURIComponent(msg)}" target="_blank">
+        📩 Cobrar no WhatsApp
+      </a>
+    `;
+
+    lista.appendChild(div);
+  });
+}
+</script>
+
+<style>
+body { font-family: Arial; background:#f4f4f4; text-align:center; }
+input { padding:10px; margin:5px; width:80%; }
+button { padding:10px; background:green; color:white; border:none; }
+</style>
 
 </head>
 
@@ -75,19 +115,19 @@
 <h1>💰 Sanza Empréstimos</h1>
 
 <div id="login">
-  <input type="password" id="senha" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
+<input type="password" id="senha" placeholder="Senha">
+<button onclick="login()">Entrar</button>
 </div>
 
 <div id="app" style="display:none;">
-  <h2>Novo Empréstimo</h2>
+<h2>Novo Empréstimo</h2>
 
-<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br>
+<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto (ex: 244...)"><br> <input id="valor" type="number" placeholder="Valor"><br> <input id="dias" type="number" placeholder="Dias para pagar"><br> <input id="item" placeholder="Item penhorado"><br> <input id="credor" placeholder="Credor"><br>
 
-<button onclick="adicionar()">Salvar</button>
+<button onclick="salvar()">Salvar</button>
 
-  <h3>Clientes:</h3>
-  <div id="lista"></div>
+<h3>Clientes:</h3>
+<div id="lista"></div>
 </div>
 
 </body>
