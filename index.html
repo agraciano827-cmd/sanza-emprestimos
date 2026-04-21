@@ -5,13 +5,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sanza Empréstimos</title>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
+      authDomain: "sanza-emprestimos.firebaseapp.com",
+      projectId: "sanza-emprestimos",
+      storageBucket: "sanza-emprestimos.firebasestorage.app",
+      messagingSenderId: "789742780283",
+      appId: "1:789742780283:web:114b9c40497a561e2007de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.login = function() {
+      if (document.getElementById('senha').value === '1989') {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        carregar();
+      } else {
+        alert('Senha incorreta');
+      }
+    }
+
+    window.adicionar = async function() {
+      let nome = document.getElementById('nome').value;
+      let contacto = document.getElementById('contacto').value;
+      let valor = document.getElementById('valor').value;
+
+      await addDoc(collection(db, "clientes"), {
+        nome,
+        contacto,
+        valor,
+        data: new Date()
+      });
+
+      alert("Salvo com sucesso!");
+      carregar();
+    }
+
+    async function carregar() {
+      const lista = document.getElementById('lista');
+      lista.innerHTML = "";
+
+      const querySnapshot = await getDocs(collection(db, "clientes"));
+      querySnapshot.forEach((doc) => {
+        let d = doc.data();
+        let div = document.createElement('div');
+        div.innerHTML = `<b>${d.nome}</b> - ${d.valor} Kz<br>${d.contacto}<hr>`;
+        lista.appendChild(div);
+      });
+    }
+  </script>
+
   <style>
     body { font-family: Arial; background:#f4f4f4; text-align:center; }
     input { padding:10px; margin:5px; width:80%; }
-    button { padding:10px 20px; background:green; color:white; border:none; }
-    .card { background:white; padding:10px; margin:10px; border-radius:10px; }
+    button { padding:10px; background:green; color:white; border:none; }
   </style>
+
 </head>
+
 <body>
 
 <h1>💰 Sanza Empréstimos</h1>
@@ -22,38 +80,15 @@
 </div>
 
 <div id="app" style="display:none;">
-  <h2>Registrar Empréstimo</h2>
+  <h2>Novo Empréstimo</h2>
 
-<input id="nome" placeholder="Nome do cliente"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br>
+<input id="nome" placeholder="Nome"><br> <input id="contacto" placeholder="Contacto"><br> <input id="valor" type="number" placeholder="Valor"><br>
 
-<button onclick="adicionar()">Adicionar</button>
+<button onclick="adicionar()">Salvar</button>
 
   <h3>Clientes:</h3>
   <div id="lista"></div>
 </div>
 
-<script>
-function login(){
-  if(document.getElementById('senha').value == '1989'){
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-  } else {
-    alert('Senha incorreta');
-  }
-}
-
-function adicionar(){
-  let nome = document.getElementById('nome').value;
-  let valor = document.getElementById('valor').value;
-
-  let div = document.createElement('div');
-  div.className = 'card';
-  div.innerHTML = `<b>${nome}</b><br>Valor: ${valor} Kz`;
-
-  document.getElementById('lista').appendChild(div);
-}
-</script>
-
 </body>
 </html>
-
