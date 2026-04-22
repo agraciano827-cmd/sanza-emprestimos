@@ -8,173 +8,188 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<style>
+body{
+  font-family: Arial;
+  background:#f0f2f5;
+  margin:0;
+}
+
+header{
+  background:#0a7d3b;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.container{
+  padding:15px;
+  max-width:900px;
+  margin:auto;
+}
+
+.card{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:10px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button{
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  margin:5px;
+  cursor:pointer;
+}
+
+.btn-primary{ background:#0a7d3b; color:white;}
+.btn-danger{ background:#d9534f; color:white;}
+.btn-edit{ background:#0275d8; color:white;}
+
+.dashboard{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.dash-box{
+  flex:1;
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  text-align:center;
+}
+</style>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
+  apiKey: "AIzaSy...",
   authDomain: "sanza-emprestimos.firebaseapp.com",
-  projectId: "sanza-emprestimos",
-  storageBucket: "sanza-emprestimos.firebasestorage.app",
-  messagingSenderId: "789742780283",
-  appId: "1:789742780283:web:114b9c40497a561e2007de"
+  projectId: "sanza-emprestimos"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let listaGlobal = [];
+let lista = [];
 
-window.login = function(){
-  if(document.getElementById('senha').value === '1989'){
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+function kz(valor){
+  return "Kz " + valor.toLocaleString("pt-PT",{minimumFractionDigits:2});
+}
+
+window.login = ()=>{
+  if(senha.value==="1989"){
+    loginBox.style.display="none";
+    appBox.style.display="block";
     carregar();
   }
 }
 
-window.salvar = async function(){
-  let nome = nomeI.value;
-  let contacto = contactoI.value;
+window.salvar = async ()=>{
   let valor = Number(valorI.value);
-  let dias = Number(diasI.value);
-  let item = itemI.value;
-  let credor = credorI.value;
+  let juros = valor*0.35;
+  let total = valor+juros;
 
-  let juros = valor * 0.35;
-  let total = valor + juros;
-
-  let vencimento = new Date();
-  vencimento.setDate(vencimento.getDate() + dias);
-
-  await addDoc(collection(db, "clientes"), {
-    nome, contacto, valor, juros, total, dias, item, credor, vencimento
+  await addDoc(collection(db,"clientes"),{
+    nome:nomeI.value,
+    valor,
+    juros,
+    total
   });
 
   carregar();
 }
 
-window.editar = function(id){
-  let d = listaGlobal.find(x=>x.id===id);
-  nomeI.value = d.nome;
-  contactoI.value = d.contacto;
-  valorI.value = d.valor;
-  diasI.value = d.dias;
-  itemI.value = d.item;
-  credorI.value = d.credor;
-
-  salvarBtn.onclick = async ()=>{
-    let juros = valorI.value * 0.35;
-    let total = Number(valorI.value) + juros;
-
-    await updateDoc(doc(db,"clientes",id),{
-      nome: nomeI.value,
-      contacto: contactoI.value,
-      valor: Number(valorI.value),
-      juros,
-      total
-    });
-
-    salvarBtn.onclick = salvar;
-    carregar();
-  }
-}
-
-window.apagar = async function(id){
+window.apagar = async(id)=>{
   await deleteDoc(doc(db,"clientes",id));
   carregar();
 }
 
-window.pesquisar = function(){
-  let termo = busca.value.toLowerCase();
-  render(listaGlobal.filter(x=>x.nome.toLowerCase().includes(termo)));
-}
-
-window.gerarPDF = function(d){
-  const { jsPDF } = window.jspdf;
-  let docp = new jsPDF();
-
-  docp.text("Sanza Empréstimos", 20, 20);
-  docp.text("Cliente: "+d.nome, 20, 40);
-  docp.text("Valor: "+d.valor+" Kz", 20, 50);
-  docp.text("Total: "+d.total+" Kz", 20, 60);
-
-  docp.save("recibo.pdf");
-}
-
 async function carregar(){
   let snap = await getDocs(collection(db,"clientes"));
-  listaGlobal = snap.docs.map(d=>({id:d.id,...d.data()}));
-  render(listaGlobal);
-}
+  lista = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-function render(lista){
-  let totalEmp = 0, totalDiv = 0;
+  let totalEmp=0, totalDiv=0, lucro=0;
 
-  listaHTML.innerHTML = "";
+  listaHTML.innerHTML="";
 
   lista.forEach(d=>{
-    totalEmp += d.valor;
-    totalDiv += d.total;
+    totalEmp+=d.valor;
+    totalDiv+=d.total;
+    lucro+=d.juros;
 
-    let div = document.createElement("div");
-    div.innerHTML = `
-    <b>${d.nome}</b> - ${d.total} Kz <br>
-    <button onclick="editar('${d.id}')">✏️</button>
-    <button onclick="apagar('${d.id}')">🗑️</button>
-    <button onclick='gerarPDF(${JSON.stringify(d)})'>🧾</button>
-    <hr>`;
+    let div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`
+      <b>${d.nome}</b><br>
+      💰 ${kz(d.valor)}<br>
+      📊 Juros: ${kz(d.juros)}<br>
+      💵 Total: ${kz(d.total)}<br><br>
+
+      <button class="btn-danger" onclick="apagar('${d.id}')">Apagar</button>
+    `;
     listaHTML.appendChild(div);
   });
 
-  totalEmpHTML.innerText = totalEmp;
-  totalDivHTML.innerText = totalDiv;
+  totalEmpHTML.innerText=kz(totalEmp);
+  totalDivHTML.innerText=kz(totalDiv);
+  lucroHTML.innerText=kz(lucro);
 }
 </script>
-
-<style>
-body{font-family:Arial;background:#f4f4f4;text-align:center}
-input{padding:10px;margin:5px;width:80%}
-button{padding:8px;margin:3px}
-</style>
 
 </head>
 
 <body>
 
-<h1>💰 Sanza Empréstimos</h1>
+<header>
+  <img src="logo.png" height="40"><br>
+  Sanza Empréstimos
+</header>
 
-<div id="login">
-<input id="senha" type="password">
-<button onclick="login()">Entrar</button>
+<div class="container">
+
+<div id="loginBox" class="card">
+<input id="senha" type="password" placeholder="Senha">
+<button class="btn-primary" onclick="login()">Entrar</button>
 </div>
 
-<div id="app" style="display:none;">
+<div id="appBox" style="display:none;">
 
-<h3>📊 Dashboard</h3>
-Emprestado: <span id="totalEmpHTML"></span> Kz |
-Dívida: <span id="totalDivHTML"></span> Kz
+<div class="dashboard">
+  <div class="dash-box">Emprestado<br><b id="totalEmpHTML"></b></div>
+  <div class="dash-box">Dívida<br><b id="totalDivHTML"></b></div>
+  <div class="dash-box">Lucro<br><b id="lucroHTML"></b></div>
+</div>
 
-<br><br>
+<div class="card">
+<h3>Novo Empréstimo</h3>
+<input id="nomeI" placeholder="Nome">
+<input id="valorI" type="number" placeholder="Valor">
+<button class="btn-primary" onclick="salvar()">Salvar</button>
+</div>
 
-<input id="busca" placeholder="Pesquisar" onkeyup="pesquisar()">
-
-<h3>Novo</h3>
-<input id="nomeI" placeholder="Nome"><br>
-<input id="contactoI" placeholder="Contacto"><br>
-<input id="valorI" placeholder="Valor"><br>
-<input id="diasI" placeholder="Dias"><br>
-<input id="itemI" placeholder="Item"><br>
-<input id="credorI" placeholder="Credor"><br>
-
-<button id="salvarBtn" onclick="salvar()">Salvar</button>
-
-<h3>Clientes</h3>
 <div id="listaHTML"></div>
+
+</div>
 
 </div>
 
 </body>
 </html>
+
 
