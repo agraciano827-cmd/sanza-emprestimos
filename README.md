@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanza Empréstimos</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#f0f2f5;margin:0}
+header{background:#0a7d3b;color:white;padding:15px;text-align:center}
+.container{max-width:900px;margin:auto;padding:15px}
+
+.card{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  margin:3px;
+  cursor:pointer;
+}
+
+.btn-green{background:#0a7d3b;color:white}
+.btn-red{background:#d9534f;color:white}
+.btn-blue{background:#0275d8;color:white}
+
+.dashboard{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.dash{
+  flex:1;
+  background:white;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+}
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSy...",
+  authDomain: "sanza-emprestimos.firebaseapp.com",
+  projectId: "sanza-emprestimos"
+});
+
+const db = getFirestore(app);
+
+let lista = [];
+let editId = null;
+
+function kz(v){
+  return "Kz " + v.toLocaleString("pt-PT",{minimumFractionDigits:2});
+}
+
+window.login=()=>{
+  if(senha.value==="1989"){
+    loginBox.style.display="none";
+    appBox.style.display="block";
+    carregar();
+  }
+}
+
+window.salvar=async()=>{
+  let valor=Number(valorI.value);
+  let juros=valor*0.35;
+  let total=valor+juros;
+
+  if(editId){
+    await updateDoc(doc(db,"clientes",editId),{
+      nome:nomeI.value,
+      valor,
+      juros,
+      total
+    });
+    editId=null;
+  } else {
+    await addDoc(collection(db,"clientes"),{
+      nome:nomeI.value,
+      valor,
+      juros,
+      total
+    });
+  }
+
+  limpar();
+  carregar();
+}
+
+function limpar(){
+  nomeI.value="";
+  valorI.value="";
+}
+
+window.editar=(id)=>{
+  let d=lista.find(x=>x.id===id);
+  nomeI.value=d.nome;
+  valorI.value=d.valor;
+  editId=id;
+}
+
+window.apagar=async(id)=>{
+  if(confirm("Apagar cliente?")){
+    await deleteDoc(doc(db,"clientes",id));
+    carregar();
+  }
+}
+
+window.pdf=(d)=>{
+  const { jsPDF } = window.jspdf;
+  let docp = new jsPDF();
+
+  docp.text("Sanza Empréstimos",20,20);
+  docp.text("Cliente: "+d.nome,20,40);
+  docp.text("Valor: "+kz(d.valor),20,50);
+  docp.text("Total: "+kz(d.total),20,60);
+
+  docp.save("recibo.pdf");
+}
+
+async function carregar(){
+  let snap=await getDocs(collection(db,"clientes"));
+  lista=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  let emp=0, div=0, lucro=0;
+  listaHTML.innerHTML="";
+
+  lista.forEach(d=>{
+    emp+=d.valor;
+    div+=d.total;
+    lucro+=d.juros;
+
+    let el=document.createElement("div");
+    el.className="card";
+    el.innerHTML=`
+      <b>${d.nome}</b><br>
+      💰 ${kz(d.valor)}<br>
+      📊 ${kz(d.juros)}<br>
+      💵 ${kz(d.total)}<br><br>
+
+      <button class="btn-blue" onclick="editar('${d.id}')">Editar</button>
+      <button class="btn-red" onclick="apagar('${d.id}')">Apagar</button>
+      <button class="btn-green" onclick='pdf(${JSON.stringify(d)})'>PDF</button>
+    `;
+    listaHTML.appendChild(el);
+  });
+
+  empHTML.innerText=kz(emp);
+  divHTML.innerText=kz(div);
+  lucroHTML.innerText=kz(lucro);
+}
+</script>
+
+</head>
+
+<body>
+
+<header>
+  <img src="logo.png" height="40"><br>
+  Sanza Empréstimos
+</header>
+
+<div class="container">
+
+<div id="loginBox" class="card">
+<input id="senha" type="password" placeholder="Senha">
+<button class="btn-green" onclick="login()">Entrar</button>
+</div>
+
+<div id="appBox" style="display:none">
+
+<div class="dashboard">
+  <div class="dash">Emprestado<br><b id="empHTML"></b></div>
+  <div class="dash">Dívida<br><b id="divHTML"></b></div>
+  <div class="dash">Lucro<br><b id="lucroHTML"></b></div>
+</div>
+
+<div class="card">
+<h3>Novo / Editar</h3>
+<input id="nomeI" placeholder="Nome">
+<input id="valorI" placeholder="Valor">
+<button class="btn-green" onclick="salvar()">Salvar</button>
+</div>
+
+<div id="listaHTML"></div>
+
+</div>
+
+</div>
+
+</body>
+</html>
