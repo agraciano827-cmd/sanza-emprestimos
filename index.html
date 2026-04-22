@@ -1,156 +1,31 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<title>Sanza Empréstimos</title>
+const firebaseConfig = {
+  apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
+  authDomain: "sanza-emprestimos.firebaseapp.com",
+  projectId: "sanza-emprestimos",
+  storageBucket: "sanza-emprestimos.firebasestorage.app",
+  messagingSenderId: "789742780283",
+  appId: "1:789742780283:web:114b9c40497a561e2007de"
+};
 
-<style>
-body{
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background:#f4f6f9;
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-/* HEADER */
-header{
-    background: linear-gradient(135deg, #0a7d3b, #0f9d58);
-    color:white;
-    padding:20px;
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-}
-
-/* DASHBOARD */
-.dashboard{
-    display:flex;
-    gap:15px;
-    padding:15px;
-}
-
-.card{
-    flex:1;
-    background:white;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    text-align:center;
-}
-
-.card h3{
-    margin:0;
-    color:#666;
-}
-
-.card p{
-    font-size:20px;
-    font-weight:bold;
-    margin-top:10px;
-}
-
-/* FORM */
-.form{
-    margin:15px;
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-input{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-button{
-    margin-top:10px;
-    padding:12px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-.btn-save{
-    background:#0a7d3b;
-    color:white;
-}
-
-.btn-delete{
-    background:#e74c3c;
-    color:white;
-}
-
-/* CLIENTES */
-.cliente{
-    margin:15px;
-    background:white;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.nome{
-    font-weight:bold;
-    font-size:18px;
-}
-
-.info{
-    margin-top:8px;
-    color:#555;
-}
-
-</style>
-</head>
-
-<body>
-
-<header>
-Sanza Empréstimos
-</header>
-
-<div class="dashboard">
-    <div class="card">
-        <h3>Emprestado</h3>
-        <p id="totalEmprestado">Kz 0,00</p>
-    </div>
-
-    <div class="card">
-        <h3>Dívida</h3>
-        <p id="totalDivida">Kz 0,00</p>
-    </div>
-
-    <div class="card">
-        <h3>Lucro</h3>
-        <p id="totalLucro">Kz 0,00</p>
-    </div>
-</div>
-
-<div class="form">
-    <h2>Novo Empréstimo</h2>
-    <input id="nome" placeholder="Nome do cliente">
-    <input id="valor" type="number" placeholder="Valor">
-    <button class="btn-save" onclick="salvar()">Salvar</button>
-</div>
-
-<div id="lista"></div>
-
-<script>
-let dados = [];
+const lista = document.getElementById("lista");
 
 function formatar(valor){
-    return valor.toLocaleString('pt-AO', {
+    return valor.toLocaleString('pt-AO',{
         style:'currency',
         currency:'AOA'
     });
 }
 
-function salvar(){
+async function salvar(){
     let nome = document.getElementById('nome').value;
     let valor = parseFloat(document.getElementById('valor').value);
 
@@ -159,23 +34,54 @@ function salvar(){
     let juros = valor * 0.35;
     let total = valor + juros;
 
-    dados.push({nome, valor, juros, total});
+    await addDoc(collection(db, "clientes"), {
+        nome, valor, juros, total
+    });
 
-    atualizar();
+    carregar();
 }
 
-function apagar(index){
-    dados.splice(index,1);
-    atualizar();
+window.salvar = salvar;
+
+async function apagar(id){
+    await deleteDoc(doc(db, "clientes", id));
+    carregar();
 }
 
-function atualizar(){
-    let lista = document.getElementById('lista');
+window.apagar = apagar;
+
+async function editar(id, nomeAtual, valorAtual){
+    let novoNome = prompt("Editar nome:", nomeAtual);
+    let novoValor = parseFloat(prompt("Editar valor:", valorAtual));
+
+    if(!novoNome || !novoValor) return;
+
+    let juros = novoValor * 0.35;
+    let total = novoValor + juros;
+
+    await updateDoc(doc(db, "clientes", id), {
+        nome: novoNome,
+        valor: novoValor,
+        juros,
+        total
+    });
+
+    carregar();
+}
+
+window.editar = editar;
+
+async function carregar(){
     lista.innerHTML = "";
 
     let emprestado=0, divida=0, lucro=0;
 
-    dados.forEach((d,i)=>{
+    const querySnapshot = await getDocs(collection(db, "clientes"));
+
+    querySnapshot.forEach((docItem)=>{
+        let d = docItem.data();
+        let id = docItem.id;
+
         emprestado += d.valor;
         divida += d.total;
         lucro += d.juros;
@@ -186,7 +92,9 @@ function atualizar(){
             <div class="info">💰 ${formatar(d.valor)}</div>
             <div class="info">📊 Juros: ${formatar(d.juros)}</div>
             <div class="info">📈 Total: ${formatar(d.total)}</div>
-            <button class="btn-delete" onclick="apagar(${i})">Apagar</button>
+
+            <button onclick="editar('${id}', '${d.nome}', ${d.valor})">✏️ Editar</button>
+            <button class="btn-delete" onclick="apagar('${id}')">🗑 Apagar</button>
         </div>
         `;
     });
@@ -195,9 +103,6 @@ function atualizar(){
     document.getElementById('totalDivida').innerText = formatar(divida);
     document.getElementById('totalLucro').innerText = formatar(lucro);
 }
+
+carregar();
 </script>
-
-</body>
-</html>
-
-
