@@ -8,7 +8,7 @@
 <style>
 body{
     margin:0;
-    font-family:Arial;
+    font-family:'Segoe UI', sans-serif;
     background:#f4f6f9;
 }
 
@@ -16,68 +16,90 @@ body{
 header{
     background:#0a7d3b;
     color:#fff;
-    padding:15px;
+    padding:18px;
     text-align:center;
     font-size:20px;
+    font-weight:bold;
+}
+
+/* CONTAINER */
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:20px;
 }
 
 /* DASHBOARD */
 .dashboard{
     display:flex;
-    gap:10px;
-    padding:10px;
+    gap:15px;
+    margin-bottom:20px;
 }
 .card{
     flex:1;
     background:#fff;
     padding:15px;
-    border-radius:10px;
+    border-radius:12px;
     text-align:center;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* FORM */
 .form{
-    padding:15px;
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom:20px;
 }
+
 input{
     width:100%;
     padding:12px;
     margin-top:10px;
     border-radius:8px;
-    border:1px solid #ccc;
+    border:1px solid #ddd;
 }
 
 /* BOTÕES */
 button{
-    padding:10px;
+    padding:10px 14px;
     border:none;
     border-radius:8px;
     margin-top:10px;
     cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-save{
     background:#0a7d3b;
     color:#fff;
 }
-button:hover{opacity:0.9;}
-
+.btn-edit{
+    background:#3498db;
+    color:#fff;
+}
 .btn-delete{
     background:#e74c3c;
+    color:#fff;
+}
+
+button:hover{
+    opacity:0.9;
 }
 
 /* CLIENTES */
-#lista{
-    padding:15px;
-}
-
 .cliente{
     background:#fff;
     padding:15px;
     margin-bottom:15px;
-    border-radius:10px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
+
 .nome{
     font-weight:bold;
+    margin-bottom:5px;
 }
 </style>
 </head>
@@ -86,19 +108,37 @@ button:hover{opacity:0.9;}
 
 <header>💰 Sanza Empréstimos</header>
 
-<div class="dashboard">
-    <div class="card">Emprestado<br><b id="totalEmprestado">Kz 0,00</b></div>
-    <div class="card">Dívida<br><b id="totalDivida">Kz 0,00</b></div>
-    <div class="card">Lucro<br><b id="totalLucro">Kz 0,00</b></div>
-</div>
+<div class="container">
 
-<div class="form">
-    <input id="nome" placeholder="Nome do cliente">
-    <input id="valor" type="number" placeholder="Valor">
-    <button onclick="salvar()">Salvar</button>
-</div>
+    <!-- DASHBOARD -->
+    <div class="dashboard">
+        <div class="card">
+            <div>Emprestado</div>
+            <b id="totalEmprestado">Kz 0,00</b>
+        </div>
 
-<div id="lista"></div>
+        <div class="card">
+            <div>Dívida</div>
+            <b id="totalDivida">Kz 0,00</b>
+        </div>
+
+        <div class="card">
+            <div>Lucro</div>
+            <b id="totalLucro">Kz 0,00</b>
+        </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form">
+        <input id="nome" placeholder="Nome do cliente">
+        <input id="valor" type="number" placeholder="Valor">
+        <button class="btn-save" onclick="salvar()">Salvar</button>
+    </div>
+
+    <!-- LISTA -->
+    <div id="lista"></div>
+
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -109,9 +149,6 @@ const firebaseConfig = {
   apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
   authDomain: "sanza-emprestimos.firebaseapp.com",
   projectId: "sanza-emprestimos",
-  storageBucket: "sanza-emprestimos.appspot.com",
-  messagingSenderId: "789742780283",
-  appId: "1:789742780283:web:114b9c40497a561e2007de"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -126,6 +163,7 @@ function formatar(valor){
     });
 }
 
+/* SALVAR */
 window.salvar = async function(){
     let nome = document.getElementById('nome').value;
     let valor = parseFloat(document.getElementById('valor').value);
@@ -139,17 +177,19 @@ window.salvar = async function(){
         nome, valor, juros, total
     });
 
-    document.getElementById('nome').value = "";
-    document.getElementById('valor').value = "";
+    document.getElementById('nome').value="";
+    document.getElementById('valor').value="";
 
     carregar();
 }
 
+/* APAGAR */
 window.apagar = async function(id){
     await deleteDoc(doc(db, "clientes", id));
     carregar();
 }
 
+/* EDITAR */
 window.editar = async function(id, nomeAtual, valorAtual){
     let novoNome = prompt("Nome:", nomeAtual);
     let novoValor = parseFloat(prompt("Valor:", valorAtual));
@@ -169,12 +209,13 @@ window.editar = async function(id, nomeAtual, valorAtual){
     carregar();
 }
 
+/* CARREGAR (CORRIGIDO) */
 async function carregar(){
-    lista.innerHTML = "";
-
     let emprestado=0, divida=0, lucro=0;
 
     const querySnapshot = await getDocs(collection(db, "clientes"));
+
+    let html = "";
 
     querySnapshot.forEach((docItem)=>{
         let d = docItem.data();
@@ -184,17 +225,19 @@ async function carregar(){
         divida += d.total;
         lucro += d.juros;
 
-        lista.innerHTML += `
+        html += `
         <div class="cliente">
             <div class="nome">${d.nome}</div>
             <div>💰 ${formatar(d.valor)}</div>
             <div>📊 Juros: ${formatar(d.juros)}</div>
             <div>📈 Total: ${formatar(d.total)}</div>
 
-            <button onclick="editar('${id}', '${d.nome}', ${d.valor})">Editar</button>
+            <button class="btn-edit" onclick="editar('${id}', '${d.nome}', ${d.valor})">Editar</button>
             <button class="btn-delete" onclick="apagar('${id}')">Apagar</button>
         </div>`;
     });
+
+    lista.innerHTML = html;
 
     document.getElementById('totalEmprestado').innerText = formatar(emprestado);
     document.getElementById('totalDivida').innerText = formatar(divida);
