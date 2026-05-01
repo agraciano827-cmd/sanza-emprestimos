@@ -6,19 +6,21 @@
 <title>Sanza Empréstimos</title>
 
 <style>
+
+/* FUNDO */
 body{
     margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background:#f4f6f9;
+    font-family:'Segoe UI', sans-serif;
+    background:linear-gradient(135deg,#0a7d3b,#0f9d58);
+    color:#333;
 }
 
 /* HEADER */
 header{
-    background:#0a7d3b;
-    color:#fff;
-    padding:18px;
+    padding:20px;
     text-align:center;
-    font-size:20px;
+    color:white;
+    font-size:22px;
     font-weight:bold;
 }
 
@@ -29,7 +31,7 @@ header{
     padding:20px;
 }
 
-/* DASHBOARD */
+/* CARDS */
 .dashboard{
     display:flex;
     gap:15px;
@@ -38,11 +40,11 @@ header{
 
 .card{
     flex:1;
-    background:#fff;
-    padding:15px;
-    border-radius:12px;
+    background:white;
+    padding:18px;
+    border-radius:15px;
     text-align:center;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
 
 .card h3{
@@ -52,75 +54,84 @@ header{
 }
 
 .card p{
-    margin:5px 0 0;
-    font-size:18px;
+    margin:8px 0 0;
+    font-size:20px;
     font-weight:bold;
 }
 
 /* FORM */
 .form{
-    background:#fff;
+    background:white;
     padding:20px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
     margin-bottom:20px;
 }
 
+.form h2{
+    margin-top:0;
+}
+
+/* INPUT */
 input{
     width:100%;
-    padding:12px;
+    padding:14px;
     margin-top:10px;
-    border-radius:8px;
+    border-radius:10px;
     border:1px solid #ddd;
+    font-size:14px;
 }
 
 /* BOTÕES */
 button{
-    padding:10px 14px;
+    padding:12px 16px;
     border:none;
-    border-radius:8px;
-    margin-top:10px;
+    border-radius:10px;
+    margin-top:12px;
     cursor:pointer;
     font-weight:bold;
+    transition:0.2s;
 }
 
 .btn-save{
     background:#0a7d3b;
-    color:#fff;
+    color:white;
 }
 
 .btn-edit{
     background:#3498db;
-    color:#fff;
+    color:white;
 }
 
 .btn-delete{
     background:#e74c3c;
-    color:#fff;
+    color:white;
 }
 
 button:hover{
-    opacity:0.9;
+    transform:scale(1.05);
 }
 
-/* CLIENTES */
+/* CLIENTE */
 .cliente{
-    background:#fff;
-    padding:15px;
+    background:white;
+    padding:18px;
+    border-radius:15px;
     margin-bottom:15px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
 
 .nome{
     font-weight:bold;
-    font-size:16px;
+    font-size:17px;
     margin-bottom:8px;
 }
 
 .info{
     font-size:14px;
+    margin-bottom:4px;
 }
+
 </style>
 </head>
 
@@ -256,8 +267,8 @@ async function carregar(){
             <div class="info">📊 Juros: ${formatar(d.juros)}</div>
             <div class="info">📈 Total: ${formatar(d.total)}</div>
 
-            <button class="btn-edit" onclick="editar('${id}', '${d.nome}', ${d.valor})">✏️ Editar</button>
-            <button class="btn-delete" onclick="apagar('${id}')">🗑 Apagar</button>
+            <button class="btn-edit" onclick="editar('${id}', '${d.nome}', ${d.valor})">Editar</button>
+            <button class="btn-delete" onclick="apagar('${id}')">Apagar</button>
         </div>
         `;
     });
