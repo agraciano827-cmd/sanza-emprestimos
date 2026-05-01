@@ -6,132 +6,79 @@
 <title>Sanza Empréstimos</title>
 
 <style>
-
-/* FUNDO */
 body{
     margin:0;
-    font-family:'Segoe UI', sans-serif;
-    background:linear-gradient(135deg,#0a7d3b,#0f9d58);
-    color:#333;
+    font-family:Arial;
+    background:#f4f6f9;
 }
 
 /* HEADER */
 header{
-    padding:20px;
+    background:#0a7d3b;
+    color:#fff;
+    padding:15px;
     text-align:center;
-    color:white;
-    font-size:22px;
-    font-weight:bold;
+    font-size:20px;
 }
 
-/* CONTAINER */
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:20px;
-}
-
-/* CARDS */
+/* DASHBOARD */
 .dashboard{
     display:flex;
-    gap:15px;
-    margin-bottom:20px;
+    gap:10px;
+    padding:10px;
 }
-
 .card{
     flex:1;
-    background:white;
-    padding:18px;
-    border-radius:15px;
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
     text-align:center;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
-}
-
-.card h3{
-    margin:0;
-    font-size:14px;
-    color:#777;
-}
-
-.card p{
-    margin:8px 0 0;
-    font-size:20px;
-    font-weight:bold;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
 /* FORM */
 .form{
-    background:white;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
-    margin-bottom:20px;
+    padding:15px;
 }
-
-.form h2{
-    margin-top:0;
-}
-
-/* INPUT */
 input{
     width:100%;
-    padding:14px;
+    padding:12px;
     margin-top:10px;
-    border-radius:10px;
-    border:1px solid #ddd;
-    font-size:14px;
+    border-radius:8px;
+    border:1px solid #ccc;
 }
 
 /* BOTÕES */
 button{
-    padding:12px 16px;
+    padding:10px;
     border:none;
-    border-radius:10px;
-    margin-top:12px;
+    border-radius:8px;
+    margin-top:10px;
     cursor:pointer;
-    font-weight:bold;
-    transition:0.2s;
-}
-
-.btn-save{
     background:#0a7d3b;
-    color:white;
+    color:#fff;
 }
-
-.btn-edit{
-    background:#3498db;
-    color:white;
-}
+button:hover{opacity:0.9;}
 
 .btn-delete{
     background:#e74c3c;
-    color:white;
 }
 
-button:hover{
-    transform:scale(1.05);
+/* CLIENTES */
+#lista{
+    padding:15px;
 }
 
-/* CLIENTE */
 .cliente{
-    background:white;
-    padding:18px;
-    border-radius:15px;
+    background:#fff;
+    padding:15px;
     margin-bottom:15px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
-
 .nome{
     font-weight:bold;
-    font-size:17px;
-    margin-bottom:8px;
 }
-
-.info{
-    font-size:14px;
-    margin-bottom:4px;
-}
-
 </style>
 </head>
 
@@ -139,49 +86,30 @@ button:hover{
 
 <header>💰 Sanza Empréstimos</header>
 
-<div class="container">
-
-    <!-- DASHBOARD -->
-    <div class="dashboard">
-        <div class="card">
-            <h3>Emprestado</h3>
-            <p id="totalEmprestado">Kz 0,00</p>
-        </div>
-
-        <div class="card">
-            <h3>Dívida</h3>
-            <p id="totalDivida">Kz 0,00</p>
-        </div>
-
-        <div class="card">
-            <h3>Lucro</h3>
-            <p id="totalLucro">Kz 0,00</p>
-        </div>
-    </div>
-
-    <!-- FORM -->
-    <div class="form">
-        <h2>Novo Empréstimo</h2>
-        <input id="nome" placeholder="Nome do cliente">
-        <input id="valor" type="number" placeholder="Valor">
-        <button class="btn-save" onclick="salvar()">Salvar</button>
-    </div>
-
-    <!-- LISTA -->
-    <div id="lista"></div>
-
+<div class="dashboard">
+    <div class="card">Emprestado<br><b id="totalEmprestado">Kz 0,00</b></div>
+    <div class="card">Dívida<br><b id="totalDivida">Kz 0,00</b></div>
+    <div class="card">Lucro<br><b id="totalLucro">Kz 0,00</b></div>
 </div>
+
+<div class="form">
+    <input id="nome" placeholder="Nome do cliente">
+    <input id="valor" type="number" placeholder="Valor">
+    <button onclick="salvar()">Salvar</button>
+</div>
+
+<div id="lista"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } 
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCur6eOFsD32uz6EEwT-pfNPii-pKq1AGs",
   authDomain: "sanza-emprestimos.firebaseapp.com",
   projectId: "sanza-emprestimos",
-  storageBucket: "sanza-emprestimos.firebasestorage.app",
+  storageBucket: "sanza-emprestimos.appspot.com",
   messagingSenderId: "789742780283",
   appId: "1:789742780283:web:114b9c40497a561e2007de"
 };
@@ -198,11 +126,11 @@ function formatar(valor){
     });
 }
 
-async function salvar(){
+window.salvar = async function(){
     let nome = document.getElementById('nome').value;
     let valor = parseFloat(document.getElementById('valor').value);
 
-    if(!nome || !valor) return;
+    if(!nome || !valor) return alert("Preencha os campos");
 
     let juros = valor * 0.35;
     let total = valor + juros;
@@ -217,17 +145,14 @@ async function salvar(){
     carregar();
 }
 
-window.salvar = salvar;
-
-async function apagar(id){
+window.apagar = async function(id){
     await deleteDoc(doc(db, "clientes", id));
     carregar();
 }
-window.apagar = apagar;
 
-async function editar(id, nomeAtual, valorAtual){
-    let novoNome = prompt("Editar nome:", nomeAtual);
-    let novoValor = parseFloat(prompt("Editar valor:", valorAtual));
+window.editar = async function(id, nomeAtual, valorAtual){
+    let novoNome = prompt("Nome:", nomeAtual);
+    let novoValor = parseFloat(prompt("Valor:", valorAtual));
 
     if(!novoNome || !novoValor) return;
 
@@ -243,7 +168,6 @@ async function editar(id, nomeAtual, valorAtual){
 
     carregar();
 }
-window.editar = editar;
 
 async function carregar(){
     lista.innerHTML = "";
@@ -263,14 +187,13 @@ async function carregar(){
         lista.innerHTML += `
         <div class="cliente">
             <div class="nome">${d.nome}</div>
-            <div class="info">💰 ${formatar(d.valor)}</div>
-            <div class="info">📊 Juros: ${formatar(d.juros)}</div>
-            <div class="info">📈 Total: ${formatar(d.total)}</div>
+            <div>💰 ${formatar(d.valor)}</div>
+            <div>📊 Juros: ${formatar(d.juros)}</div>
+            <div>📈 Total: ${formatar(d.total)}</div>
 
-            <button class="btn-edit" onclick="editar('${id}', '${d.nome}', ${d.valor})">Editar</button>
+            <button onclick="editar('${id}', '${d.nome}', ${d.valor})">Editar</button>
             <button class="btn-delete" onclick="apagar('${id}')">Apagar</button>
-        </div>
-        `;
+        </div>`;
     });
 
     document.getElementById('totalEmprestado').innerText = formatar(emprestado);
