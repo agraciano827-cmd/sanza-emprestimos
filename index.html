@@ -21,6 +21,22 @@ header{
     font-size:20px;
 }
 
+/* DASHBOARD */
+.dashboard{
+    display:flex;
+    gap:10px;
+    padding:10px;
+}
+
+.card{
+    flex:1;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
 /* FORM */
 .form{
     padding:15px;
@@ -64,26 +80,6 @@ button:hover{
 
 .nome{
     font-weight:bold;
-    font-size:16px;
-}
-
-.info{
-    margin-top:5px;
-}
-
-/* DASHBOARD */
-.dashboard{
-    display:flex;
-    gap:10px;
-    padding:10px;
-}
-
-.card{
-    flex:1;
-    background:#fff;
-    padding:10px;
-    border-radius:10px;
-    text-align:center;
 }
 </style>
 </head>
@@ -128,11 +124,14 @@ function formatar(valor){
     });
 }
 
-async function salvar(){
+window.salvar = async function(){
     let nome = document.getElementById('nome').value;
     let valor = parseFloat(document.getElementById('valor').value);
 
-    if(!nome || !valor) return;
+    if(!nome || !valor){
+        alert("Preencha os campos");
+        return;
+    }
 
     let juros = valor * 0.35;
     let total = valor + juros;
@@ -147,16 +146,12 @@ async function salvar(){
     carregar();
 }
 
-window.salvar = salvar;
-
-async function apagar(id){
+window.apagar = async function(id){
     await deleteDoc(doc(db, "clientes", id));
     carregar();
 }
 
-window.apagar = apagar;
-
-async function editar(id, nomeAtual, valorAtual){
+window.editar = async function(id, nomeAtual, valorAtual){
     let novoNome = prompt("Editar nome:", nomeAtual);
     let novoValor = parseFloat(prompt("Editar valor:", valorAtual));
 
@@ -174,8 +169,6 @@ async function editar(id, nomeAtual, valorAtual){
 
     carregar();
 }
-
-window.editar = editar;
 
 async function carregar(){
     lista.innerHTML = "";
@@ -195,9 +188,9 @@ async function carregar(){
         lista.innerHTML += `
         <div class="cliente">
             <div class="nome">${d.nome}</div>
-            <div class="info">💰 ${formatar(d.valor)}</div>
-            <div class="info">📊 Juros: ${formatar(d.juros)}</div>
-            <div class="info">📈 Total: ${formatar(d.total)}</div>
+            <div>💰 ${formatar(d.valor)}</div>
+            <div>📊 Juros: ${formatar(d.juros)}</div>
+            <div>📈 Total: ${formatar(d.total)}</div>
 
             <br>
 
